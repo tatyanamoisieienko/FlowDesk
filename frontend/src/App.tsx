@@ -1,8 +1,8 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { erstelleAnfrage, getAnfragen, getStammdaten } from './api'
-import type { AnfrageListItem, Standort } from './types'
+import { erstelleAnfrage, getAnfrage, getAnfragen, getStammdaten } from './api'
+import type { AnfrageDetail, AnfrageListItem, Standort } from './types'
 
-type Ansicht = 'liste' | 'formular'
+type Ansicht = 'liste' | 'formular' | 'detail'
 
 function kurzerText(text: string, laenge = 60): string {
   if (text.length <= laenge) return text
@@ -21,6 +21,7 @@ function App() {
   const [anfragen, setAnfragen] = useState<AnfrageListItem[]>([])
   const [laedt, setLaedt] = useState(true)
   const [fehler, setFehler] = useState<string | null>(null)
+  const [ausgewaehlteId, setAusgewaehlteId] = useState<number | null>(null)
 
   const ladeAnfragen = () => {
     setLaedt(true)
@@ -45,6 +46,14 @@ function App() {
             ladeAnfragen()
           }}
         />
+      </main>
+    )
+  }
+
+  if (ansicht === 'detail' && ausgewaehlteId !== null) {
+    return (
+      <main>
+        <AnfrageDetailAnsicht id={ausgewaehlteId} onZurueck={() => setAnsicht('liste')} />
       </main>
     )
   }
@@ -75,7 +84,14 @@ function App() {
           </thead>
           <tbody>
             {anfragen.map((anfrage) => (
-              <tr key={anfrage.id}>
+              <tr
+                key={anfrage.id}
+                className="klickbar"
+                onClick={() => {
+                  setAusgewaehlteId(anfrage.id)
+                  setAnsicht('detail')
+                }}
+              >
                 <td>{anfrage.id}</td>
                 <td>{anfrage.titel ?? kurzerText(anfrage.originalText)}</td>
                 <td>{anfrage.standort}</td>
@@ -170,6 +186,63 @@ function NeueAnfrageFormular({
           </button>
         </div>
       </form>
+    </>
+  )
+}
+
+function AnfrageDetailAnsicht({ id, onZurueck }: { id: number; onZurueck: () => void }) {
+  const [anfrage, setAnfrage] = useState<AnfrageDetail | null>(null)
+  const [laedt, setLaedt] = useState(true)
+  const [fehler, setFehler] = useState<string | null>(null)
+
+  useEffect(() => {
+    setLaedt(true)
+    setFehler(null)
+    getAnfrage(id)
+      .then(setAnfrage)
+      .catch((error: Error) => setFehler(error.message))
+      .finally(() => setLaedt(false))
+  }, [id])
+
+  return (
+    <>
+      <header>
+        <h1>Anfrage #{id}</h1>
+        <button type="button" onClick={onZurueck}>
+          Zurück
+        </button>
+      </header>
+
+      {laedt && <p>Anfrage wird geladen…</p>}
+      {fehler && <p role="alert">{fehler}</p>}
+
+      {anfrage && (
+        <dl className="detail">
+          <dt>Titel</dt>
+          <dd>{anfrage.titel ?? '–'}</dd>
+
+          <dt>Standort</dt>
+          <dd>{anfrage.standort}</dd>
+
+          <dt>Status</dt>
+          <dd>{anfrage.status}</dd>
+
+          <dt>Priorität</dt>
+          <dd>{anfrage.prioritaet ?? '–'}</dd>
+
+          <dt>Abteilungen</dt>
+          <dd>{anfrage.abteilungen.length > 0 ? anfrage.abteilungen.join(', ') : '–'}</dd>
+
+          <dt>Erstellt am</dt>
+          <dd>{formatDatum(anfrage.erstelltAm)}</dd>
+
+          <dt>Aktualisiert am</dt>
+          <dd>{formatDatum(anfrage.aktualisiertAm)}</dd>
+
+          <dt>Ursprünglicher Text</dt>
+          <dd className="original-text">{anfrage.originalText}</dd>
+        </dl>
+      )}
     </>
   )
 }

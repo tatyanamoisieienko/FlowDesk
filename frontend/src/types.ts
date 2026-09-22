@@ -27,3 +27,15 @@ export interface AnfrageErstellenRequest {
   originalText: string
   standortId: number
 }
+
+export interface AnfrageDetail {
+  id: number
+  originalText: string
+  titel: string | null
+  standort: string
+  status: string
+  prioritaet: string | null
+  abteilungen: string[]
+  erstelltAm: string
+  aktualisiertAm: string
+}

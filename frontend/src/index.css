@@ -77,6 +77,31 @@ tbody tr:hover {
   background: var(--row-hover);
 }
 
+tr.klickbar {
+  cursor: pointer;
+}
+
+.detail {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  row-gap: 12px;
+  column-gap: 16px;
+  margin-top: 16px;
+}
+
+.detail dt {
+  color: var(--text-h);
+  font-weight: 600;
+}
+
+.detail dd {
+  margin: 0;
+}
+
+.detail .original-text {
+  white-space: pre-wrap;
+}
+
 form {
   max-width: 480px;
   margin-top: 16px;
