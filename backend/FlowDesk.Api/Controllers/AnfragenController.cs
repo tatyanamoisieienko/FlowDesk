@@ -169,6 +169,7 @@ public class AnfragenController(FlowDeskDbContext db, IKiVorschlagService kiServ
     private static AnfrageListItemDto ToListItemDto(Anfrage anfrage) => new(
         anfrage.Id,
         anfrage.Titel,
+        anfrage.OriginalText,
         anfrage.Standort.Name,
         anfrage.Status,
         anfrage.Prioritaet,

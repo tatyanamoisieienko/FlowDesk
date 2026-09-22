@@ -5,6 +5,7 @@ namespace FlowDesk.Api.Dtos;
 public record AnfrageListItemDto(
     int Id,
     string? Titel,
+    string OriginalText,
     string Standort,
     AnfrageStatus Status,
     Prioritaet? Prioritaet,
