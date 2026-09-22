@@ -81,6 +81,11 @@ tr.klickbar {
   cursor: pointer;
 }
 
+th.sortierbar {
+  cursor: pointer;
+  user-select: none;
+}
+
 .detail {
   display: grid;
   grid-template-columns: 160px 1fr;

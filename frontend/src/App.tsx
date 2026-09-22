@@ -49,6 +49,7 @@ function App() {
   const [laedt, setLaedt] = useState(true)
   const [fehler, setFehler] = useState<string | null>(null)
   const [ausgewaehlteId, setAusgewaehlteId] = useState<number | null>(null)
+  const [idSortierung, setIdSortierung] = useState<'auf' | 'ab' | null>(null)
 
   const ladeAnfragen = () => {
     setLaedt(true)
@@ -62,6 +63,15 @@ function App() {
   useEffect(() => {
     ladeAnfragen()
   }, [])
+
+  const handleIdSortierenKlick = () => {
+    setIdSortierung((bisher) => (bisher === 'auf' ? 'ab' : 'auf'))
+  }
+
+  const angezeigteAnfragen =
+    idSortierung === null
+      ? anfragen
+      : [...anfragen].sort((a, b) => (idSortierung === 'auf' ? a.id - b.id : b.id - a.id))
 
   const handleLoeschen = async (id: number) => {
     if (!window.confirm('Möchtest du diese Anfrage wirklich löschen?')) return
@@ -113,7 +123,9 @@ function App() {
         <table>
           <thead>
             <tr>
-              <th>Id</th>
+              <th className="sortierbar" onClick={handleIdSortierenKlick}>
+                Id{idSortierung === 'auf' ? ' ↑' : idSortierung === 'ab' ? ' ↓' : ''}
+              </th>
               <th>Titel</th>
               <th>Standort</th>
               <th>Status</th>
@@ -123,7 +135,7 @@ function App() {
             </tr>
           </thead>
           <tbody>
-            {anfragen.map((anfrage) => (
+            {angezeigteAnfragen.map((anfrage) => (
               <tr
                 key={anfrage.id}
                 className="klickbar"
