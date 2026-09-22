@@ -7,3 +7,23 @@ export interface AnfrageListItem {
   prioritaet: string | null
   erstelltAm: string
 }
+
+export interface Standort {
+  id: number
+  name: string
+}
+
+export interface Abteilung {
+  id: number
+  name: string
+}
+
+export interface Stammdaten {
+  standorte: Standort[]
+  abteilungen: Abteilung[]
+}
+
+export interface AnfrageErstellenRequest {
+  originalText: string
+  standortId: number
+}

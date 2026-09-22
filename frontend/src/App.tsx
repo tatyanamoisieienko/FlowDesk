@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react'
-import { getAnfragen } from './api'
-import type { AnfrageListItem } from './types'
+import { useEffect, useState, type FormEvent } from 'react'
+import { erstelleAnfrage, getAnfragen, getStammdaten } from './api'
+import type { AnfrageListItem, Standort } from './types'
+
+type Ansicht = 'liste' | 'formular'
 
 function kurzerText(text: string, laenge = 60): string {
   if (text.length <= laenge) return text
@@ -12,22 +14,45 @@ function formatDatum(iso: string): string {
 }
 
 function App() {
+  const [ansicht, setAnsicht] = useState<Ansicht>('liste')
   const [anfragen, setAnfragen] = useState<AnfrageListItem[]>([])
   const [laedt, setLaedt] = useState(true)
   const [fehler, setFehler] = useState<string | null>(null)
 
-  useEffect(() => {
+  const ladeAnfragen = () => {
+    setLaedt(true)
+    setFehler(null)
     getAnfragen()
       .then(setAnfragen)
       .catch((error: Error) => setFehler(error.message))
       .finally(() => setLaedt(false))
+  }
+
+  useEffect(() => {
+    ladeAnfragen()
   }, [])
+
+  if (ansicht === 'formular') {
+    return (
+      <main>
+        <NeueAnfrageFormular
+          onAbbrechen={() => setAnsicht('liste')}
+          onErstellt={() => {
+            setAnsicht('liste')
+            ladeAnfragen()
+          }}
+        />
+      </main>
+    )
+  }
 
   return (
     <main>
       <header>
         <h1>Anfragen</h1>
-        <button type="button">Neue Anfrage</button>
+        <button type="button" onClick={() => setAnsicht('formular')}>
+          Neue Anfrage
+        </button>
       </header>
 
       {laedt && <p>Anfragen werden geladen…</p>}
@@ -60,6 +85,89 @@ function App() {
         </table>
       )}
     </main>
+  )
+}
+
+function NeueAnfrageFormular({
+  onAbbrechen,
+  onErstellt,
+}: {
+  onAbbrechen: () => void
+  onErstellt: () => void
+}) {
+  const [standorte, setStandorte] = useState<Standort[]>([])
+  const [standortId, setStandortId] = useState('')
+  const [originalText, setOriginalText] = useState('')
+  const [fehler, setFehler] = useState<string | null>(null)
+  const [speichertGerade, setSpeichertGerade] = useState(false)
+
+  useEffect(() => {
+    getStammdaten()
+      .then((stammdaten) => setStandorte(stammdaten.standorte))
+      .catch((error: Error) => setFehler(error.message))
+  }, [])
+
+  const handleSubmit = async (event: FormEvent) => {
+    event.preventDefault()
+
+    if (!standortId) {
+      setFehler('Bitte einen Standort auswählen.')
+      return
+    }
+    if (!originalText.trim()) {
+      setFehler('Bitte einen Text eingeben.')
+      return
+    }
+
+    setFehler(null)
+    setSpeichertGerade(true)
+    try {
+      await erstelleAnfrage({ originalText: originalText.trim(), standortId: Number(standortId) })
+      onErstellt()
+    } catch (error) {
+      setFehler((error as Error).message)
+      setSpeichertGerade(false)
+    }
+  }
+
+  return (
+    <>
+      <h1>Neue Anfrage</h1>
+      <form onSubmit={handleSubmit}>
+        <div className="feld">
+          <label htmlFor="standort">Standort</label>
+          <select id="standort" value={standortId} onChange={(event) => setStandortId(event.target.value)}>
+            <option value="">Bitte wählen…</option>
+            {standorte.map((standort) => (
+              <option key={standort.id} value={standort.id}>
+                {standort.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="feld">
+          <label htmlFor="originalText">Anfrage</label>
+          <textarea
+            id="originalText"
+            rows={6}
+            value={originalText}
+            onChange={(event) => setOriginalText(event.target.value)}
+          />
+        </div>
+
+        {fehler && <p role="alert">{fehler}</p>}
+
+        <div className="aktionen">
+          <button type="button" onClick={onAbbrechen}>
+            Abbrechen
+          </button>
+          <button type="submit" disabled={speichertGerade}>
+            Anfrage erstellen
+          </button>
+        </div>
+      </form>
+    </>
   )
 }
 

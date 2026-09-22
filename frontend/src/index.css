@@ -76,3 +76,40 @@ th {
 tbody tr:hover {
   background: var(--row-hover);
 }
+
+form {
+  max-width: 480px;
+  margin-top: 16px;
+}
+
+.feld {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.feld label {
+  color: var(--text-h);
+  font-weight: 600;
+}
+
+.feld select,
+.feld textarea {
+  font: inherit;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-h);
+}
+
+.aktionen {
+  display: flex;
+  gap: 12px;
+}
+
+.aktionen button[type='button'] {
+  background: var(--bg);
+  color: var(--text-h);
+}
