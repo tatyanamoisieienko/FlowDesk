@@ -1,8 +1,26 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { erstelleAnfrage, getAnfrage, getAnfragen, getStammdaten, starteKiAnalyse } from './api'
-import type { AnfrageDetail, AnfrageListItem, KiVorschlag, Standort } from './types'
+import {
+  aktualisiereStatus,
+  erstelleAnfrage,
+  getAnfrage,
+  getAnfragen,
+  getStammdaten,
+  sendeKiEntscheidung,
+  starteKiAnalyse,
+} from './api'
+import type { Abteilung, AnfrageDetail, AnfrageListItem, KiVorschlag, Standort } from './types'
 
 type Ansicht = 'liste' | 'formular' | 'detail'
+
+const STATUS_OPTIONEN: { wert: 'Neu' | 'InBearbeitung' | 'Erledigt'; label: string }[] = [
+  { wert: 'Neu', label: 'Neu' },
+  { wert: 'InBearbeitung', label: 'In Bearbeitung' },
+  { wert: 'Erledigt', label: 'Erledigt' },
+]
+
+function formatPruefstatus(pruefstatus: string): string {
+  return pruefstatus === 'Geaendert' ? 'Geändert' : pruefstatus
+}
 
 function kurzerText(text: string, laenge = 60): string {
   if (text.length <= laenge) return text
@@ -10,7 +28,7 @@ function kurzerText(text: string, laenge = 60): string {
 }
 
 function formatDatum(iso: string): string {
-  // + 2 Stunden 
+  // + 2 Stunden
   const datum = new Date(iso)
   datum.setHours(datum.getHours() + 2)
   return datum.toLocaleString('de-DE')
@@ -53,7 +71,8 @@ function App() {
   if (ansicht === 'detail' && ausgewaehlteId !== null) {
     return (
       <main>
-        <AnfrageDetailAnsicht id={ausgewaehlteId} onZurueck={() => setAnsicht('liste')} />
+        <AnfrageDetailAnsicht id={ausgewaehlteId} onZurueck={() => {setAnsicht('liste')
+          ladeAnfragen()}} />
       </main>
     )
   }
@@ -197,8 +216,13 @@ function AnfrageDetailAnsicht({ id, onZurueck }: { id: number; onZurueck: () => 
   const [kiVorschlag, setKiVorschlag] = useState<KiVorschlag | null>(null)
   const [analysiertGerade, setAnalysiertGerade] = useState(false)
   const [analyseFehler, setAnalyseFehler] = useState<string | null>(null)
+  const [bearbeitungsModus, setBearbeitungsModus] = useState(false)
+  const [entscheidetGerade, setEntscheidetGerade] = useState(false)
+  const [entscheidungFehler, setEntscheidungFehler] = useState<string | null>(null)
+  const [statusAktualisiertGerade, setStatusAktualisiertGerade] = useState(false)
+  const [statusFehler, setStatusFehler] = useState<string | null>(null)
 
-  useEffect(() => {
+  const ladeAnfrage = () => {
     setLaedt(true)
     setFehler(null)
     getAnfrage(id)
@@ -208,6 +232,11 @@ function AnfrageDetailAnsicht({ id, onZurueck }: { id: number; onZurueck: () => 
       })
       .catch((error: Error) => setFehler(error.message))
       .finally(() => setLaedt(false))
+  }
+
+  useEffect(() => {
+    ladeAnfrage()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
   const handleKiAnalyse = async () => {
@@ -220,6 +249,32 @@ function AnfrageDetailAnsicht({ id, onZurueck }: { id: number; onZurueck: () => 
       setAnalyseFehler((error as Error).message)
     } finally {
       setAnalysiertGerade(false)
+    }
+  }
+
+  const handleEntscheidung = async (pruefstatus: 'Angenommen' | 'Abgelehnt') => {
+    setEntscheidungFehler(null)
+    setEntscheidetGerade(true)
+    try {
+      await sendeKiEntscheidung(id, { pruefstatus })
+      ladeAnfrage()
+    } catch (error) {
+      setEntscheidungFehler((error as Error).message)
+    } finally {
+      setEntscheidetGerade(false)
+    }
+  }
+
+  const handleStatusAendern = async (neuerStatus: 'Neu' | 'InBearbeitung' | 'Erledigt') => {
+    setStatusFehler(null)
+    setStatusAktualisiertGerade(true)
+    try {
+      await aktualisiereStatus(id, { status: neuerStatus })
+      ladeAnfrage()
+    } catch (error) {
+      setStatusFehler((error as Error).message)
+    } finally {
+      setStatusAktualisiertGerade(false)
     }
   }
 
@@ -244,7 +299,22 @@ function AnfrageDetailAnsicht({ id, onZurueck }: { id: number; onZurueck: () => 
           <dd>{anfrage.standort}</dd>
 
           <dt>Status</dt>
-          <dd>{anfrage.status}</dd>
+          <dd>
+            <select
+              value={anfrage.status}
+              disabled={statusAktualisiertGerade}
+              onChange={(event) =>
+                handleStatusAendern(event.target.value as 'Neu' | 'InBearbeitung' | 'Erledigt')
+              }
+            >
+              {STATUS_OPTIONEN.map((option) => (
+                <option key={option.wert} value={option.wert}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            {statusFehler && <p role="alert">{statusFehler}</p>}
+          </dd>
 
           <dt>Priorität</dt>
           <dd>{anfrage.prioritaet ?? '–'}</dd>
@@ -267,9 +337,11 @@ function AnfrageDetailAnsicht({ id, onZurueck }: { id: number; onZurueck: () => 
         <section className="ki-bereich">
           <h2>KI-Vorschlag</h2>
 
-          <button type="button" onClick={handleKiAnalyse} disabled={analysiertGerade}>
-            {analysiertGerade ? 'KI analysiert…' : 'Mit KI analysieren'}
-          </button>
+          {kiVorschlag === null && (
+            <button type="button" onClick={handleKiAnalyse} disabled={analysiertGerade}>
+              {analysiertGerade ? 'KI analysiert…' : 'Mit KI analysieren'}
+            </button>
+          )}
 
           {analyseFehler && <p role="alert">{analyseFehler}</p>}
 
@@ -298,12 +370,146 @@ function AnfrageDetailAnsicht({ id, onZurueck }: { id: number; onZurueck: () => 
               <dd>{kiVorschlag.manuellePruefungErforderlich ? 'Ja' : 'Nein'}</dd>
 
               <dt>Prüfstatus</dt>
-              <dd>{kiVorschlag.pruefstatus}</dd>
+              <dd>{formatPruefstatus(kiVorschlag.pruefstatus)}</dd>
             </dl>
+          )}
+
+          {kiVorschlag && kiVorschlag.pruefstatus === 'Ausstehend' && !bearbeitungsModus && (
+            <div className="aktionen">
+              {!kiVorschlag.manuellePruefungErforderlich &&
+                (kiVorschlag.vorgeschlagenerTitel !== null ||
+                  kiVorschlag.vorgeschlagenePrioritaet !== null ||
+                  kiVorschlag.vorgeschlageneAbteilungen.length > 0) && (
+                  <button type="button" onClick={() => handleEntscheidung('Angenommen')} disabled={entscheidetGerade}>
+                    Annehmen
+                  </button>
+                )}
+              <button type="button" onClick={() => setBearbeitungsModus(true)} disabled={entscheidetGerade}>
+                Ändern
+              </button>
+              <button type="button" onClick={() => handleEntscheidung('Abgelehnt')} disabled={entscheidetGerade}>
+                Ablehnen
+              </button>
+            </div>
+          )}
+
+          {entscheidungFehler && <p role="alert">{entscheidungFehler}</p>}
+
+          {kiVorschlag && bearbeitungsModus && (
+            <KiVorschlagBearbeiten
+              id={id}
+              kiVorschlag={kiVorschlag}
+              onAbbrechen={() => setBearbeitungsModus(false)}
+              onGespeichert={() => {
+                setBearbeitungsModus(false)
+                ladeAnfrage()
+              }}
+            />
           )}
         </section>
       )}
     </>
+  )
+}
+
+function KiVorschlagBearbeiten({
+  id,
+  kiVorschlag,
+  onAbbrechen,
+  onGespeichert,
+}: {
+  id: number
+  kiVorschlag: KiVorschlag
+  onAbbrechen: () => void
+  onGespeichert: () => void
+}) {
+  const [abteilungen, setAbteilungen] = useState<Abteilung[]>([])
+  const [titel, setTitel] = useState(kiVorschlag.vorgeschlagenerTitel ?? '')
+  const [prioritaet, setPrioritaet] = useState(kiVorschlag.vorgeschlagenePrioritaet ?? '')
+  const [ausgewaehlteAbteilungIds, setAusgewaehlteAbteilungIds] = useState<number[]>([])
+  const [fehler, setFehler] = useState<string | null>(null)
+  const [speichertGerade, setSpeichertGerade] = useState(false)
+
+  useEffect(() => {
+    getStammdaten()
+      .then((stammdaten) => {
+        setAbteilungen(stammdaten.abteilungen)
+        setAusgewaehlteAbteilungIds(
+          stammdaten.abteilungen
+            .filter((abteilung) => kiVorschlag.vorgeschlageneAbteilungen.includes(abteilung.name))
+            .map((abteilung) => abteilung.id),
+        )
+      })
+      .catch((error: Error) => setFehler(error.message))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kiVorschlag])
+
+  const toggleAbteilung = (abteilungId: number) => {
+    setAusgewaehlteAbteilungIds((bisher) =>
+      bisher.includes(abteilungId) ? bisher.filter((wert) => wert !== abteilungId) : [...bisher, abteilungId],
+    )
+  }
+
+  const handleSubmit = async (event: FormEvent) => {
+    event.preventDefault()
+    setFehler(null)
+    setSpeichertGerade(true)
+    try {
+      await sendeKiEntscheidung(id, {
+        pruefstatus: 'Geaendert',
+        titel: titel.trim() === '' ? null : titel.trim(),
+        prioritaet: prioritaet === '' ? null : prioritaet,
+        abteilungIds: ausgewaehlteAbteilungIds,
+      })
+      onGespeichert()
+    } catch (error) {
+      setFehler((error as Error).message)
+      setSpeichertGerade(false)
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="ki-bearbeiten">
+      <div className="feld">
+        <label htmlFor="ki-titel">Titel</label>
+        <input id="ki-titel" type="text" value={titel} onChange={(event) => setTitel(event.target.value)} />
+      </div>
+
+      <div className="feld">
+        <label htmlFor="ki-prioritaet">Priorität</label>
+        <select id="ki-prioritaet" value={prioritaet} onChange={(event) => setPrioritaet(event.target.value)}>
+          <option value="">Bitte wählen…</option>
+          <option value="Niedrig">Niedrig</option>
+          <option value="Normal">Normal</option>
+          <option value="Hoch">Hoch</option>
+        </select>
+      </div>
+
+      <div className="feld">
+        <span>Abteilungen</span>
+        {abteilungen.map((abteilung) => (
+          <label key={abteilung.id} className="checkbox-feld">
+            <input
+              type="checkbox"
+              checked={ausgewaehlteAbteilungIds.includes(abteilung.id)}
+              onChange={() => toggleAbteilung(abteilung.id)}
+            />
+            {abteilung.name}
+          </label>
+        ))}
+      </div>
+
+      {fehler && <p role="alert">{fehler}</p>}
+
+      <div className="aktionen">
+        <button type="button" onClick={onAbbrechen}>
+          Abbrechen
+        </button>
+        <button type="submit" disabled={speichertGerade}>
+          Änderungen übernehmen
+        </button>
+      </div>
+    </form>
   )
 }
 

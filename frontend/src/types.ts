@@ -52,3 +52,14 @@ export interface KiVorschlag {
   manuellePruefungErforderlich: boolean
   pruefstatus: string
 }
+
+export interface KiEntscheidungRequest {
+  pruefstatus: 'Angenommen' | 'Geaendert' | 'Abgelehnt'
+  titel?: string | null
+  prioritaet?: string | null
+  abteilungIds?: number[] | null
+}
+
+export interface StatusAktualisierenRequest {
+  status: 'Neu' | 'InBearbeitung' | 'Erledigt'
+}

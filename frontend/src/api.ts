@@ -1,4 +1,12 @@
-import type { AnfrageDetail, AnfrageErstellenRequest, AnfrageListItem, KiVorschlag, Stammdaten } from './types'
+import type {
+  AnfrageDetail,
+  AnfrageErstellenRequest,
+  AnfrageListItem,
+  KiEntscheidungRequest,
+  KiVorschlag,
+  Stammdaten,
+  StatusAktualisierenRequest,
+} from './types'
 
 const API_BASE_URL = 'http://localhost:5083'
 
@@ -32,6 +40,33 @@ export async function starteKiAnalyse(id: number): Promise<KiVorschlag> {
   })
   if (!response.ok) {
     throw new Error(`KI-Analyse konnte nicht durchgeführt werden (Status ${response.status}).`)
+  }
+  return response.json()
+}
+
+export async function sendeKiEntscheidung(id: number, entscheidung: KiEntscheidungRequest): Promise<AnfrageDetail> {
+  const response = await fetch(`${API_BASE_URL}/api/anfragen/${id}/ki-entscheidung`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(entscheidung),
+  })
+  if (!response.ok) {
+    throw new Error(`Entscheidung konnte nicht gespeichert werden (Status ${response.status}).`)
+  }
+  return response.json()
+}
+
+export async function aktualisiereStatus(
+  id: number,
+  request: StatusAktualisierenRequest,
+): Promise<AnfrageDetail> {
+  const response = await fetch(`${API_BASE_URL}/api/anfragen/${id}/status`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(request),
+  })
+  if (!response.ok) {
+    throw new Error(`Status konnte nicht aktualisiert werden (Status ${response.status}).`)
   }
   return response.json()
 }

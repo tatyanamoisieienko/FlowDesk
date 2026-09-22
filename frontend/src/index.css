@@ -132,13 +132,21 @@ form {
 }
 
 .feld select,
-.feld textarea {
+.feld textarea,
+.feld input[type='text'] {
   font: inherit;
   padding: 8px;
   border-radius: 6px;
   border: 1px solid var(--border);
   background: var(--bg);
   color: var(--text-h);
+}
+
+.checkbox-feld {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 400;
 }
 
 .aktionen {
