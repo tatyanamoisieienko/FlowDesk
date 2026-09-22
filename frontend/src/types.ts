@@ -38,4 +38,17 @@ export interface AnfrageDetail {
   abteilungen: string[]
   erstelltAm: string
   aktualisiertAm: string
+  kiVorschlag: KiVorschlag | null
+}
+
+export interface KiVorschlag {
+  id: number
+  anfrageId: number
+  vorgeschlagenerTitel: string | null
+  vorgeschlagenePrioritaet: string | null
+  vorgeschlageneAbteilungen: string[]
+  fehlendeInformationen: string | null
+  vorgeschlageneNaechsteSchritte: string | null
+  manuellePruefungErforderlich: boolean
+  pruefstatus: string
 }

@@ -102,6 +102,18 @@ tr.klickbar {
   white-space: pre-wrap;
 }
 
+.ki-bereich {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+
+.ki-bereich h2 {
+  font-size: 20px;
+  color: var(--text-h);
+  margin: 0 0 12px;
+}
+
 form {
   max-width: 480px;
   margin-top: 16px;

@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { erstelleAnfrage, getAnfrage, getAnfragen, getStammdaten } from './api'
-import type { AnfrageDetail, AnfrageListItem, Standort } from './types'
+import { erstelleAnfrage, getAnfrage, getAnfragen, getStammdaten, starteKiAnalyse } from './api'
+import type { AnfrageDetail, AnfrageListItem, KiVorschlag, Standort } from './types'
 
 type Ansicht = 'liste' | 'formular' | 'detail'
 
@@ -194,15 +194,34 @@ function AnfrageDetailAnsicht({ id, onZurueck }: { id: number; onZurueck: () => 
   const [anfrage, setAnfrage] = useState<AnfrageDetail | null>(null)
   const [laedt, setLaedt] = useState(true)
   const [fehler, setFehler] = useState<string | null>(null)
+  const [kiVorschlag, setKiVorschlag] = useState<KiVorschlag | null>(null)
+  const [analysiertGerade, setAnalysiertGerade] = useState(false)
+  const [analyseFehler, setAnalyseFehler] = useState<string | null>(null)
 
   useEffect(() => {
     setLaedt(true)
     setFehler(null)
     getAnfrage(id)
-      .then(setAnfrage)
+      .then((daten) => {
+        setAnfrage(daten)
+        setKiVorschlag(daten.kiVorschlag)
+      })
       .catch((error: Error) => setFehler(error.message))
       .finally(() => setLaedt(false))
   }, [id])
+
+  const handleKiAnalyse = async () => {
+    setAnalyseFehler(null)
+    setAnalysiertGerade(true)
+    try {
+      const ergebnis = await starteKiAnalyse(id)
+      setKiVorschlag(ergebnis)
+    } catch (error) {
+      setAnalyseFehler((error as Error).message)
+    } finally {
+      setAnalysiertGerade(false)
+    }
+  }
 
   return (
     <>
@@ -242,6 +261,47 @@ function AnfrageDetailAnsicht({ id, onZurueck }: { id: number; onZurueck: () => 
           <dt>Ursprünglicher Text</dt>
           <dd className="original-text">{anfrage.originalText}</dd>
         </dl>
+      )}
+
+      {anfrage && (
+        <section className="ki-bereich">
+          <h2>KI-Vorschlag</h2>
+
+          <button type="button" onClick={handleKiAnalyse} disabled={analysiertGerade}>
+            {analysiertGerade ? 'KI analysiert…' : 'Mit KI analysieren'}
+          </button>
+
+          {analyseFehler && <p role="alert">{analyseFehler}</p>}
+
+          {kiVorschlag && (
+            <dl className="detail">
+              <dt>Vorgeschlagener Titel</dt>
+              <dd>{kiVorschlag.vorgeschlagenerTitel ?? '–'}</dd>
+
+              <dt>Vorgeschlagene Priorität</dt>
+              <dd>{kiVorschlag.vorgeschlagenePrioritaet ?? '–'}</dd>
+
+              <dt>Vorgeschlagene Abteilungen</dt>
+              <dd>
+                {kiVorschlag.vorgeschlageneAbteilungen.length > 0
+                  ? kiVorschlag.vorgeschlageneAbteilungen.join(', ')
+                  : '–'}
+              </dd>
+
+              <dt>Fehlende Informationen</dt>
+              <dd>{kiVorschlag.fehlendeInformationen ?? '–'}</dd>
+
+              <dt>Vorgeschlagene nächste Schritte</dt>
+              <dd>{kiVorschlag.vorgeschlageneNaechsteSchritte ?? '–'}</dd>
+
+              <dt>Manuelle Prüfung erforderlich</dt>
+              <dd>{kiVorschlag.manuellePruefungErforderlich ? 'Ja' : 'Nein'}</dd>
+
+              <dt>Prüfstatus</dt>
+              <dd>{kiVorschlag.pruefstatus}</dd>
+            </dl>
+          )}
+        </section>
       )}
     </>
   )

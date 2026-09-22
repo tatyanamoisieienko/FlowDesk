@@ -1,4 +1,4 @@
-import type { AnfrageDetail, AnfrageErstellenRequest, AnfrageListItem, Stammdaten } from './types'
+import type { AnfrageDetail, AnfrageErstellenRequest, AnfrageListItem, KiVorschlag, Stammdaten } from './types'
 
 const API_BASE_URL = 'http://localhost:5083'
 
@@ -22,6 +22,16 @@ export async function getAnfrage(id: number): Promise<AnfrageDetail> {
   const response = await fetch(`${API_BASE_URL}/api/anfragen/${id}`)
   if (!response.ok) {
     throw new Error(`Anfrage konnte nicht geladen werden (Status ${response.status}).`)
+  }
+  return response.json()
+}
+
+export async function starteKiAnalyse(id: number): Promise<KiVorschlag> {
+  const response = await fetch(`${API_BASE_URL}/api/anfragen/${id}/ki-analyse`, {
+    method: 'POST',
+  })
+  if (!response.ok) {
+    throw new Error(`KI-Analyse konnte nicht durchgeführt werden (Status ${response.status}).`)
   }
   return response.json()
 }
