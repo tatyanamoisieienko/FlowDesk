@@ -4,6 +4,7 @@ import type {
   AnfrageListItem,
   KiEntscheidungRequest,
   KiVorschlag,
+  PrioritaetAktualisierenRequest,
   Stammdaten,
   StatusAktualisierenRequest,
 } from './types'
@@ -69,6 +70,30 @@ export async function aktualisiereStatus(
     throw new Error(`Status konnte nicht aktualisiert werden (Status ${response.status}).`)
   }
   return response.json()
+}
+
+export async function aktualisierePrioritaet(
+  id: number,
+  request: PrioritaetAktualisierenRequest,
+): Promise<AnfrageDetail> {
+  const response = await fetch(`${API_BASE_URL}/api/anfragen/${id}/prioritaet`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(request),
+  })
+  if (!response.ok) {
+    throw new Error(`Priorität konnte nicht aktualisiert werden (Status ${response.status}).`)
+  }
+  return response.json()
+}
+
+export async function loescheAnfrage(id: number): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/anfragen/${id}`, {
+    method: 'DELETE',
+  })
+  if (!response.ok) {
+    throw new Error(`Anfrage konnte nicht gelöscht werden (Status ${response.status}).`)
+  }
 }
 
 export async function erstelleAnfrage(request: AnfrageErstellenRequest): Promise<void> {

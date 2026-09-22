@@ -1,10 +1,12 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import {
+  aktualisierePrioritaet,
   aktualisiereStatus,
   erstelleAnfrage,
   getAnfrage,
   getAnfragen,
   getStammdaten,
+  loescheAnfrage,
   sendeKiEntscheidung,
   starteKiAnalyse,
 } from './api'
@@ -16,6 +18,13 @@ const STATUS_OPTIONEN: { wert: 'Neu' | 'InBearbeitung' | 'Erledigt'; label: stri
   { wert: 'Neu', label: 'Neu' },
   { wert: 'InBearbeitung', label: 'In Bearbeitung' },
   { wert: 'Erledigt', label: 'Erledigt' },
+]
+
+const PRIORITAET_OPTIONEN: { wert: 'Niedrig' | 'Normal' | 'Hoch' | ''; label: string }[] = [
+  { wert: '', label: '–' },
+  { wert: 'Niedrig', label: 'Niedrig' },
+  { wert: 'Normal', label: 'Normal' },
+  { wert: 'Hoch', label: 'Hoch' },
 ]
 
 function formatPruefstatus(pruefstatus: string): string {
@@ -53,6 +62,17 @@ function App() {
   useEffect(() => {
     ladeAnfragen()
   }, [])
+
+  const handleLoeschen = async (id: number) => {
+    if (!window.confirm('Möchtest du diese Anfrage wirklich löschen?')) return
+
+    try {
+      await loescheAnfrage(id)
+      ladeAnfragen()
+    } catch (error) {
+      setFehler((error as Error).message)
+    }
+  }
 
   if (ansicht === 'formular') {
     return (
@@ -99,6 +119,7 @@ function App() {
               <th>Status</th>
               <th>Priorität</th>
               <th>Erstellt am</th>
+              <th>Aktion</th>
             </tr>
           </thead>
           <tbody>
@@ -117,6 +138,17 @@ function App() {
                 <td>{anfrage.status}</td>
                 <td>{anfrage.prioritaet ?? '–'}</td>
                 <td>{formatDatum(anfrage.erstelltAm)}</td>
+                <td>
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      handleLoeschen(anfrage.id)
+                    }}
+                  >
+                    Löschen
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -221,6 +253,8 @@ function AnfrageDetailAnsicht({ id, onZurueck }: { id: number; onZurueck: () => 
   const [entscheidungFehler, setEntscheidungFehler] = useState<string | null>(null)
   const [statusAktualisiertGerade, setStatusAktualisiertGerade] = useState(false)
   const [statusFehler, setStatusFehler] = useState<string | null>(null)
+  const [prioritaetAktualisiertGerade, setPrioritaetAktualisiertGerade] = useState(false)
+  const [prioritaetFehler, setPrioritaetFehler] = useState<string | null>(null)
 
   const ladeAnfrage = () => {
     setLaedt(true)
@@ -278,6 +312,19 @@ function AnfrageDetailAnsicht({ id, onZurueck }: { id: number; onZurueck: () => 
     }
   }
 
+  const handlePrioritaetAendern = async (neuePrioritaet: 'Niedrig' | 'Normal' | 'Hoch' | '') => {
+    setPrioritaetFehler(null)
+    setPrioritaetAktualisiertGerade(true)
+    try {
+      await aktualisierePrioritaet(id, { prioritaet: neuePrioritaet === '' ? null : neuePrioritaet })
+      ladeAnfrage()
+    } catch (error) {
+      setPrioritaetFehler((error as Error).message)
+    } finally {
+      setPrioritaetAktualisiertGerade(false)
+    }
+  }
+
   return (
     <>
       <header>
@@ -317,7 +364,22 @@ function AnfrageDetailAnsicht({ id, onZurueck }: { id: number; onZurueck: () => 
           </dd>
 
           <dt>Priorität</dt>
-          <dd>{anfrage.prioritaet ?? '–'}</dd>
+          <dd>
+            <select
+              value={anfrage.prioritaet ?? ''}
+              disabled={prioritaetAktualisiertGerade}
+              onChange={(event) =>
+                handlePrioritaetAendern(event.target.value as 'Niedrig' | 'Normal' | 'Hoch' | '')
+              }
+            >
+              {PRIORITAET_OPTIONEN.map((option) => (
+                <option key={option.wert} value={option.wert}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+            {prioritaetFehler && <p role="alert">{prioritaetFehler}</p>}
+          </dd>
 
           <dt>Abteilungen</dt>
           <dd>{anfrage.abteilungen.length > 0 ? anfrage.abteilungen.join(', ') : '–'}</dd>

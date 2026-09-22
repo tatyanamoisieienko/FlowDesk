@@ -27,3 +27,5 @@ public record AnfrageDetailDto(
 public record AnfrageErstellenRequest(string OriginalText, int StandortId);
 
 public record StatusAktualisierenRequest(AnfrageStatus Status);
+
+public record PrioritaetAktualisierenRequest(Prioritaet? Prioritaet);

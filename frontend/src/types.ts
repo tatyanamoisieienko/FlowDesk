@@ -63,3 +63,7 @@ export interface KiEntscheidungRequest {
 export interface StatusAktualisierenRequest {
   status: 'Neu' | 'InBearbeitung' | 'Erledigt'
 }
+
+export interface PrioritaetAktualisierenRequest {
+  prioritaet: 'Niedrig' | 'Normal' | 'Hoch' | null
+}

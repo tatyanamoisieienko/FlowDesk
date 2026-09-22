@@ -54,6 +54,18 @@ public class AnfragenController(FlowDeskDbContext db, IKiVorschlagService kiServ
         return CreatedAtAction(nameof(GetById), new { id = anfrage.Id }, ToDetailDto(anfrage));
     }
 
+    [HttpDelete("{id:int}")]
+    public async Task<IActionResult> Loeschen(int id)
+    {
+        var anfrage = await db.Anfragen.FindAsync(id);
+        if (anfrage is null) return NotFound();
+
+        db.Anfragen.Remove(anfrage);
+        await db.SaveChangesAsync();
+
+        return NoContent();
+    }
+
     [HttpPatch("{id:int}/status")]
     public async Task<ActionResult<AnfrageDetailDto>> StatusAktualisieren(int id, StatusAktualisierenRequest request)
     {
@@ -61,6 +73,19 @@ public class AnfragenController(FlowDeskDbContext db, IKiVorschlagService kiServ
         if (anfrage is null) return NotFound();
 
         anfrage.Status = request.Status;
+        anfrage.AktualisiertAm = DateTime.UtcNow;
+        await db.SaveChangesAsync();
+
+        return Ok(ToDetailDto(anfrage));
+    }
+
+    [HttpPatch("{id:int}/prioritaet")]
+    public async Task<ActionResult<AnfrageDetailDto>> PrioritaetAktualisieren(int id, PrioritaetAktualisierenRequest request)
+    {
+        var anfrage = await LadeAnfrageMitDetails(id);
+        if (anfrage is null) return NotFound();
+
+        anfrage.Prioritaet = request.Prioritaet;
         anfrage.AktualisiertAm = DateTime.UtcNow;
         await db.SaveChangesAsync();
 
