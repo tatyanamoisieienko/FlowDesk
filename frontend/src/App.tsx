@@ -10,7 +10,10 @@ function kurzerText(text: string, laenge = 60): string {
 }
 
 function formatDatum(iso: string): string {
-  return new Date(iso).toLocaleString('de-DE')
+  // + 2 Stunden 
+  const datum = new Date(iso)
+  datum.setHours(datum.getHours() + 2)
+  return datum.toLocaleString('de-DE')
 }
 
 function App() {
