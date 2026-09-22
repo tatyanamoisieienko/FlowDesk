@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="FlowDesk.Api.Tests/FlowDesk.Api.Tests.csproj" />
+  <Project Path="FlowDesk.Api/FlowDesk.Api.csproj" />
+</Solution>
