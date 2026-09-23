@@ -111,8 +111,8 @@ function App() {
     <main>
       <header>
         <h1>Anfragen</h1>
-        <button type="button" onClick={() => setAnsicht('formular')}>
-          Neue Anfrage
+        <button type="button" className="btn-primary" onClick={() => setAnsicht('formular')}>
+          + Neue Anfrage
         </button>
       </header>
 
@@ -120,11 +120,17 @@ function App() {
       {fehler && <p role="alert">{fehler}</p>}
 
       {!laedt && !fehler && (
+        <div className="card tabelle-karte">
         <table>
           <thead>
             <tr>
               <th className="sortierbar" onClick={handleIdSortierenKlick}>
-                Id{idSortierung === 'auf' ? ' ↑' : idSortierung === 'ab' ? ' ↓' : ''}
+                <span className="sort-label">
+                  <span>Id</span>
+                  {idSortierung !== null && (
+                    <span className="sort-pfeil">{idSortierung === 'auf' ? '↑' : '↓'}</span>
+                  )}
+                </span>
               </th>
               <th>Titel</th>
               <th>Standort</th>
@@ -153,6 +159,7 @@ function App() {
                 <td>
                   <button
                     type="button"
+                    className="btn-dark"
                     onClick={(event) => {
                       event.stopPropagation()
                       handleLoeschen(anfrage.id)
@@ -165,6 +172,7 @@ function App() {
             ))}
           </tbody>
         </table>
+        </div>
       )}
     </main>
   )
@@ -218,7 +226,12 @@ function NeueAnfrageFormular({
       <form onSubmit={handleSubmit}>
         <div className="feld">
           <label htmlFor="standort">Standort</label>
-          <select id="standort" value={standortId} onChange={(event) => setStandortId(event.target.value)}>
+          <select
+            id="standort"
+            className="select"
+            value={standortId}
+            onChange={(event) => setStandortId(event.target.value)}
+          >
             <option value="">Bitte wählen…</option>
             {standorte.map((standort) => (
               <option key={standort.id} value={standort.id}>
@@ -244,7 +257,7 @@ function NeueAnfrageFormular({
           <button type="button" onClick={onAbbrechen}>
             Abbrechen
           </button>
-          <button type="submit" disabled={speichertGerade}>
+          <button type="submit" className="btn-primary" disabled={speichertGerade}>
             Anfrage erstellen
           </button>
         </div>
@@ -341,7 +354,7 @@ function AnfrageDetailAnsicht({ id, onZurueck }: { id: number; onZurueck: () => 
     <>
       <header>
         <h1>Anfrage #{id}</h1>
-        <button type="button" onClick={onZurueck}>
+        <button type="button" className="btn-dark" onClick={onZurueck}>
           Zurück
         </button>
       </header>
@@ -350,16 +363,19 @@ function AnfrageDetailAnsicht({ id, onZurueck }: { id: number; onZurueck: () => 
       {fehler && <p role="alert">{fehler}</p>}
 
       {anfrage && (
-        <dl className="detail">
+        <dl className="detail card">
           <dt>Titel</dt>
           <dd>{anfrage.titel ?? '–'}</dd>
 
           <dt>Standort</dt>
           <dd>{anfrage.standort}</dd>
 
+          <div className="detail-doppelfeld">
+          <div className="detail-feld">
           <dt>Status</dt>
           <dd>
             <select
+              className="select"
               value={anfrage.status}
               disabled={statusAktualisiertGerade}
               onChange={(event) =>
@@ -374,10 +390,13 @@ function AnfrageDetailAnsicht({ id, onZurueck }: { id: number; onZurueck: () => 
             </select>
             {statusFehler && <p role="alert">{statusFehler}</p>}
           </dd>
+          </div>
 
+          <div className="detail-feld">
           <dt>Priorität</dt>
           <dd>
             <select
+              className="select"
               value={anfrage.prioritaet ?? ''}
               disabled={prioritaetAktualisiertGerade}
               onChange={(event) =>
@@ -392,6 +411,8 @@ function AnfrageDetailAnsicht({ id, onZurueck }: { id: number; onZurueck: () => 
             </select>
             {prioritaetFehler && <p role="alert">{prioritaetFehler}</p>}
           </dd>
+          </div>
+          </div>
 
           <dt>Abteilungen</dt>
           <dd>{anfrage.abteilungen.length > 0 ? anfrage.abteilungen.join(', ') : '–'}</dd>
@@ -408,11 +429,11 @@ function AnfrageDetailAnsicht({ id, onZurueck }: { id: number; onZurueck: () => 
       )}
 
       {anfrage && (
-        <section className="ki-bereich">
+        <section className="ki-bereich card">
           <h2>KI-Vorschlag</h2>
 
           {kiVorschlag === null && (
-            <button type="button" onClick={handleKiAnalyse} disabled={analysiertGerade}>
+            <button type="button" className="btn-primary" onClick={handleKiAnalyse} disabled={analysiertGerade}>
               {analysiertGerade ? 'KI analysiert…' : 'Mit KI analysieren'}
             </button>
           )}
@@ -454,7 +475,12 @@ function AnfrageDetailAnsicht({ id, onZurueck }: { id: number; onZurueck: () => 
                 (kiVorschlag.vorgeschlagenerTitel !== null ||
                   kiVorschlag.vorgeschlagenePrioritaet !== null ||
                   kiVorschlag.vorgeschlageneAbteilungen.length > 0) && (
-                  <button type="button" onClick={() => handleEntscheidung('Angenommen')} disabled={entscheidetGerade}>
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    onClick={() => handleEntscheidung('Angenommen')}
+                    disabled={entscheidetGerade}
+                  >
                     Annehmen
                   </button>
                 )}
@@ -551,7 +577,12 @@ function KiVorschlagBearbeiten({
 
       <div className="feld">
         <label htmlFor="ki-prioritaet">Priorität</label>
-        <select id="ki-prioritaet" value={prioritaet} onChange={(event) => setPrioritaet(event.target.value)}>
+        <select
+          id="ki-prioritaet"
+          className="select"
+          value={prioritaet}
+          onChange={(event) => setPrioritaet(event.target.value)}
+        >
           <option value="">Bitte wählen…</option>
           <option value="Niedrig">Niedrig</option>
           <option value="Normal">Normal</option>
@@ -579,7 +610,7 @@ function KiVorschlagBearbeiten({
         <button type="button" onClick={onAbbrechen}>
           Abbrechen
         </button>
-        <button type="submit" disabled={speichertGerade}>
+        <button type="submit" className="btn-primary" disabled={speichertGerade}>
           Änderungen übernehmen
         </button>
       </div>
