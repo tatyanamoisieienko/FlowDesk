@@ -2,9 +2,9 @@
 
 FlowDesk ist ein kleiner Full-Stack-Prototyp zur Verwaltung interner Anfragen in einer Organisation mit mehreren Standorten.
 
-Die Idee ist, unstrukturierte interne Anfragen zentral zu erfassen und sie anschließend durch einen KI-gestützten Vorschlag zu strukturieren. Der Vorschlag kann von einem Benutzer geprüft, übernommen, geändert oder abgelehnt werden.
+Die Idee ist, interne Anfragen zentral zu erfassen und mit einem KI-Vorschlag zu strukturieren. Der Benutzer kann diesen Vorschlag prüfen, ändern, annehmen oder ablehnen.
 
-Das Projekt verwendet ausschließlich fiktive Demo-Daten und verarbeitet keine realen Patienten- oder Gesundheitsdaten.
+Das Projekt verwendet nur fiktive Demo-Daten und verarbeitet keine realen Patientendaten.
 
 ## Funktionen
 
@@ -21,46 +21,35 @@ Das Projekt verwendet ausschließlich fiktive Demo-Daten und verarbeitet keine r
   - Hoch
 - Anfragen löschen
 - Sortierung nach ID
-- KI-Vorschlag für eine Anfrage erzeugen
-- KI-Vorschlag prüfen:
-  - Annehmen
-  - Ändern
-  - Ablehnen
-- Titel, Priorität und zuständige Abteilungen vor der Übernahme bearbeiten
-- Erkennen unklarer Anfragen, bei denen eine manuelle Prüfung erforderlich ist
+- KI-Vorschlag für eine Anfrage erstellen
+- KI-Vorschlag annehmen, ändern oder ablehnen
+- Titel, Priorität und zuständige Abteilungen bearbeiten
+- Unklare Anfragen erkennen, bei denen eine manuelle Prüfung notwendig ist
 
 ## KI-Demo
 
-Aktuell ist noch kein externes LLM angebunden.
+Aktuell ist noch kein echtes LLM angebunden.
 
-Stattdessen verwendet FlowDesk einen regelbasierten `DemoKiVorschlagService`. Dieser analysiert den ursprünglichen Text anhand definierter Schlüsselwörter und erstellt daraus einen Vorschlag für:
+FlowDesk verwendet den regelbasierten `DemoKiVorschlagService`. Dieser analysiert den Text anhand von Regeln und Schlüsselwörtern.
+
+Er kann Vorschläge erstellen für:
 
 - Titel
 - Priorität
-- zuständige Abteilungen
+- zuständige Abteilung oder mehrere Abteilungen
 - fehlende Informationen
 - nächste Schritte
-- erforderliche manuelle Prüfung
+- notwendige manuelle Prüfung
 
-Dabei können auch mehrere Abteilungen gleichzeitig erkannt werden.
-
-Die KI-Logik ist über `IKiVorschlagService` vom restlichen System getrennt. Dadurch kann der Demo-Service später durch eine Implementierung mit einem echten LLM ersetzt werden, ohne den gesamten Workflow neu aufzubauen.
+Die Logik ist über `IKiVorschlagService` vom restlichen System getrennt. Dadurch kann der Demo-Service später durch eine Implementierung mit einem echten LLM ersetzt werden, ohne den gesamten Workflow neu aufzubauen.
 
 ## Human-in-the-loop
 
-Ein wichtiger Teil des Projekts war für mich, dass ein KI-Vorschlag nicht automatisch die eigentliche Anfrage verändert.
+Für mich war wichtig, dass das System eine Anfrage nicht automatisch verändert.
 
-Die Analyse wird zunächst separat als Vorschlag gespeichert. Anschließend entscheidet der Benutzer, ob der Vorschlag:
+Zuerst wird ein separater Vorschlag erstellt. Der Benutzer prüft ihn und entscheidet danach, ob er ihn annehmen, ändern oder ablehnen möchte.
 
-- übernommen,
-- vorher verändert oder
-- abgelehnt
-
-werden soll.
-
-Bei sehr unklaren Anfragen wird zusätzlich eine manuelle Prüfung verlangt.
-
-Damit bleibt die endgültige Entscheidung beim Benutzer und nicht beim automatisierten System.
+Wenn eine Anfrage zu unklar ist, zeigt das System an, dass eine manuelle Prüfung notwendig ist.
 
 ## Technologie
 
@@ -103,13 +92,11 @@ dotnet restore
 dotnet run --launch-profile http
 ```
 
-Das Backend läuft anschließend unter:
+Das Backend läuft unter:
 
 ```text
 http://localhost:5083
 ```
-
-Beim ersten Start wird die lokale SQLite-Datenbank automatisch erstellt und mit Demo-Daten gefüllt.
 
 ### Frontend
 
@@ -121,14 +108,14 @@ npm install
 npm run dev
 ```
 
-Das Frontend läuft anschließend unter:
+Das Frontend läuft unter:
 
 ```text
 http://localhost:5173
 ```
 
 ### Tests
-
+ 
 ```bash
 cd backend/FlowDesk.Api.Tests
 dotnet test
@@ -136,20 +123,53 @@ dotnet test
 
 ## Arbeiten mit Claude Code
 
-Für dieses Projekt habe ich Claude Code als agentisches Coding-Werkzeug verwendet.
+Für dieses Projekt habe ich Claude Code als mein wichtigstes agentisches Coding-Werkzeug verwendet.
 
-Dabei habe ich Claude nicht einfach den kompletten Auftrag auf einmal umsetzen lassen. Ich habe die Entwicklung in kleinere Aufgaben aufgeteilt und den bestehenden Stand zwischen den einzelnen Schritten immer wieder getestet und überprüft.
+Ich habe die Entwicklung in kleine Aufgaben aufgeteilt und vorher festgelegt, welche Dateien geändert werden dürfen und welches Ergebnis ich erwarte.
 
-Mein Workflow war ungefähr:
+Claude Code analysierte den bestehenden Code und setzte einzelne Änderungen um.
 
-1. Anforderungen für den nächsten kleinen Schritt festlegen
-2. Claude Code den bestehenden Code analysieren lassen
-3. Änderung implementieren lassen
-4. Anwendung selbst starten und Verhalten testen
-5. Ergebnis und Code überprüfen
-6. Probleme oder unpassendes Verhalten konkret zurückgeben
-7. Änderung korrigieren und erneut testen
-8. funktionierenden Stand committen
+Danach startete ich die Anwendung und überprüfte das Ergebnis selbst. Wenn etwas nicht so funktionierte oder aussah, wie ich es erwartet hatte, beschrieb ich das Problem genauer und ließ die entsprechende Stelle korrigieren.
 
-Claude Code war damit das Hauptwerkzeug für die Implementierung, die Entscheidungen über Verhalten, Datenmodell und Workflow sowie die Kontrolle der Ergebnisse habe ich selbst übernommen.
+Nach der Prüfung entschied ich selbst, ob das Ergebnis für mich passt, und führte danach Commit und Push durch.
 
+## Was war für mich neu?
+
+Neu war für mich der Ansatz, ein agentisches Coding-Werkzeug als wichtigen Teil des Entwicklungsprozesses zu verwenden.
+
+Früher habe ich AI hauptsächlich für einzelne Fragen, Erklärungen oder kleinere Code-Beispiele verwendet. In diesem Projekt arbeitete Claude Code direkt mit dem bestehenden Projekt, analysierte Dateien und setzte einzelne Aufgaben um.
+
+Ich musste lernen, Aufgaben in kleine und klare Schritte aufzuteilen und vorher festzulegen, welche Dateien geändert werden dürfen und welches Ergebnis ich erwarte.
+
+Neu war für mich auch der Umgang mit dem KI-Vorschlag. Mir war wichtig, dass das System zuerst nur einen Vorschlag erstellt und der Benutzer danach entscheidet, was damit passiert.
+
+## Wo gab es Schwierigkeiten?
+
+Einige Probleme wurden erst beim Starten und Testen der Anwendung sichtbar.
+
+Zum Beispiel zeigte die Anfragenliste nach einer Änderung nicht immer sofort die aktuellen Daten. Deshalb wurde die Liste beim Zurückkehren erneut vom Backend geladen.
+
+Bei sehr unklaren Anfragen musste außerdem entschieden werden, dass das System keinen sicheren Vorschlag erstellen soll, wenn nicht genug Informationen vorhanden sind. Dafür gibt es die manuelle Prüfung.
+
+Auch beim Design gab es kleine Probleme. Claude Code hatte zum Beispiel zwei unterschiedliche Button-Arten zuerst fast gleich gestaltet. Nach meiner Prüfung habe ich die Anforderungen genauer beschrieben und die Styles wurden angepasst.
+
+Dadurch habe ich gelernt, dass die Ergebnisse eines Coding-Agents trotzdem selbst geprüft werden müssen.
+
+## Mögliche nächste Schritte
+
+In Zukunft würde ich eine Login-Funktion und verschiedene Benutzerrollen hinzufügen.
+
+Zum Beispiel könnten Mitarbeiter neue Anfragen erstellen und ihre eigenen Anfragen sehen. IT-Mitarbeiter könnten die eingegangenen Anfragen bearbeiten und Status, Priorität oder zuständige Abteilung ändern.
+
+Ich würde außerdem speichern, von welchem Mitarbeiter eine Anfrage erstellt wurde und zu welcher Abteilung diese Person gehört.
+
+Die KI-Logik könnte zusätzlich mit einer Mitarbeiterliste verbunden werden. Wenn in einer Anfrage der Name einer Person erwähnt wird, könnte das System dadurch die passende Abteilung besser bestimmen.
+
+Für eine größere Anzahl von Anfragen würde ich außerdem hinzufügen:
+
+- Suche nach Anfragen
+- Filter nach Städten
+- weitere Sortiermöglichkeiten
+- Informationen über den Ersteller einer Anfrage
+
+Später könnte der `DemoKiVorschlagService` über das bestehende `IKiVorschlagService` durch ein echtes LLM ersetzt werden.
