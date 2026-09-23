@@ -159,7 +159,7 @@ function App() {
                 <td>
                   <button
                     type="button"
-                    className="btn-dark"
+                    className="btn-delete"
                     onClick={(event) => {
                       event.stopPropagation()
                       handleLoeschen(anfrage.id)
@@ -254,10 +254,10 @@ function NeueAnfrageFormular({
         {fehler && <p role="alert">{fehler}</p>}
 
         <div className="aktionen">
-          <button type="button" onClick={onAbbrechen}>
+          <button type="button" className="btn-cancel" onClick={onAbbrechen}>
             Abbrechen
           </button>
-          <button type="submit" className="btn-primary" disabled={speichertGerade}>
+          <button type="submit" className="btn-create" disabled={speichertGerade}>
             Anfrage erstellen
           </button>
         </div>
